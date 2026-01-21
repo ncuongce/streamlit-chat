@@ -152,11 +152,11 @@ with st.sidebar:
     # Model selection
     model_option = st.selectbox(
         "🧠 Model",
-        ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+        ["gpt-4o-mini", "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
         index=0,
         help="Select the GPT model to use"
     )
-   
+
     # Temperature slider
     temperature = st.slider(
         "🌡️ Temperature",
@@ -166,9 +166,9 @@ with st.sidebar:
         step=0.1,
         help="Higher values make output more random, lower values more deterministic"
     )
-   
+
     st.markdown("---")
-   
+
     # Clear chat button
     if st.button("🗑️ Clear Chat", use_container_width=True):
         st.session_state.messages = []
@@ -189,21 +189,21 @@ try:
     # Initialize the client with timeout settings
     http_client = httpx.Client(timeout=60.0)
     client = OpenAI(api_key=OPENAI_API_KEY, http_client=http_client)
-   
+    
     # Display chat messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"], avatar="🧑‍💻" if message["role"] == "user" else "🤖"):
             st.markdown(message["content"])
-   
+    
     # Chat input
     if prompt := st.chat_input("Send a message..."):
         # Add user message to chat
         st.session_state.messages.append({"role": "user", "content": prompt})
-       
+        
         # Display user message
         with st.chat_message("user", avatar="🧑‍💻"):
             st.markdown(prompt)
-       
+        
         # Generate response
         with st.chat_message("assistant", avatar="🤖"):
             with st.spinner("Thinking..."):
@@ -212,7 +212,7 @@ try:
                     messages = [{"role": "system", "content": "You are a helpful AI assistant."}]
                     for msg in st.session_state.messages:
                         messages.append({"role": msg["role"], "content": msg["content"]})
-                   
+                    
                     # Generate response
                     response = client.chat.completions.create(
                         model=model_option,
@@ -220,22 +220,24 @@ try:
                         temperature=temperature,
                         max_tokens=4096
                     )
-                   
+                    
                     assistant_response = response.choices[0].message.content
-                   
+                    
                     # Display response
                     st.markdown(assistant_response)
-                   
+                    
                     # Add assistant response to messages
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": assistant_response
                     })
-                   
+                    
                 except Exception as e:
                     error_msg = str(e)
                     if "429" in error_msg or "rate" in error_msg.lower():
                         st.warning("⏳ Rate limit exceeded. Please wait a moment and try again.")
+                        with st.expander("Error Details"):
+                            st.code(error_msg)
                     elif "401" in error_msg or "invalid" in error_msg.lower():
                         st.error("🔑 Invalid API key. Please check your OpenAI API key.")
                     elif "connection" in error_msg.lower() or "connect" in error_msg.lower():
